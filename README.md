@@ -1,4 +1,38 @@
-# Brújula — Finanzas personales v3
+# Brújula — Finanzas personales v4
+
+## Nuevo: efectivo, cuenta y traslados de dinero propio
+
+- **Primer ingreso:** dos saldos separados, dinero en efectivo y dinero en cuenta o billeteras digitales (Nequi, Daviplata, bancos).
+- **Panel principal:** muestra el total y el detalle de efectivo y cuenta.
+- **Gastos e ingresos:** selecciona a qué cuenta pertenece cada movimiento. El gasto reduce solo ese saldo; el ingreso aumenta solo ese saldo.
+- **Consignación:** traslada efectivo a cuenta sin aumentar los ingresos.
+- **Retiro:** traslada dinero de la cuenta a efectivo sin aumentar los ingresos.
+- **Historial de traslados:** aparece separado de los ingresos, gastos y presupuestos; permite eliminar un traslado registrado por error.
+- **Control de saldo:** no permite consignar o retirar más dinero del saldo disponible en la cuenta de origen.
+- **Compatibilidad con v3:** muestra una propuesta para repartir el saldo anterior, conservando los movimientos ya registrados. Se puede ajustar el reparto libremente.
+- **Ajustar saldos:** toma una nueva fotografía del dinero actual y evita contabilizar de nuevo operaciones anteriores.
+- **Respaldos JSON:** conservan los saldos y traslados al exportar e importar.
+
+### Importante
+
+Esto es un registro **manual**, no realiza transferencias bancarias reales. Las transferencias entre dinero propio no se suman al cálculo de ingresos de la app; las **consignaciones y depósitos** deben revisarse por separado en el radar fiscal a partir de los extractos correspondientes. Los datos permanecen en el almacenamiento local del navegador y **no se sincronizan entre dispositivos**.
+
+### Archivos necesarios para GitHub Pages
+
+Coloca estos siete archivos en la raíz del repositorio:
+
+- \`index.html\`
+- \`styles.css\`
+- \`app.js\`
+- \`balance.css\`
+- \`balance.js\`
+- \`wallets.css\`
+- \`wallets.js\`
+
+GitHub Pages: Settings → Pages → Deploy from a branch → main / (root).
+
+---
+
 
 ## Novedad: saldo inicial y dinero disponible
 
