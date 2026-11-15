@@ -1,4 +1,17 @@
-# Brújula — Finanzas personales v2
+# Brújula — Finanzas personales v3
+
+## Novedad: saldo inicial y dinero disponible
+
+Al entrar por primera vez, la aplicación te pregunta cuánto dinero tienes actualmente en efectivo, bancos y billeteras digitales. Ese saldo inicial **no es un ingreso**. Los movimientos nuevos de ingresos y gastos modifican el saldo disponible. Puedes ajustar el saldo cuando necesites reconciliarlo con tu dinero real: el ajuste mantiene el historial pero no vuelve a contar movimientos antiguos.
+
+Los usuarios de v2 conservan su información en el mismo navegador; verán una opción para configurar su saldo actual. La información sigue almacenándose únicamente en el navegador, sin sincronización entre dispositivos.
+
+## Archivos v3
+
+Mantén `index.html`, `styles.css`, `app.js`, `balance.css` y `balance.js` juntos en la raíz. GitHub Pages se despliega desde la rama `main`, carpeta raíz.
+
+---
+
 
 Aplicación estática de finanzas personales para Colombia. Funciona con HTML, CSS y JavaScript sin compilación ni dependencias externas.
 
