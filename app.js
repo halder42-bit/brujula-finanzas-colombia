@@ -19,10 +19,20 @@ const incomeCat=['Trabajo','Negocio','Ingreso extra','Regalos','Otros'];
 const colors=['#63e1ad','#76a9ff','#f9bc70','#b8a6ff','#fd91ab','#6bd2e7','#d2aa79','#81dfd9','#b9c5de','#97aabe'];
 const taxData={2025:{uvt:49799,source:'https://micrositios.dian.gov.co/renta-personas-naturales-ag-2025/todo-lo-que-usted-debe-saber-sobre-renta/'},2026:{uvt:52374,source:'https://www.dian.gov.co/Paginas/Inicio.aspx'}};
 const empty=()=>({transactions:[],budgets:{},goals:[],goalEntries:[],tasks:[],fiscal:{},preferences:{name:'',savingsTarget:0},demo:false});
-function load(){try{let o=JSON.parse(localStorage.getItem(KEY));return normalize(o)}catch{return empty()}}
+function load(){if(window.BRUJULA_CLOUD_ENABLED)return empty();try{let o=JSON.parse(localStorage.getItem(KEY));return normalize(o)}catch{return empty()}}
 function normalize(o){let d=empty();if(!o||typeof o!=='object'||Array.isArray(o))return d;for(let k of ['transactions','goals','goalEntries','tasks'])if(Array.isArray(o[k]))d[k]=o[k].filter(x=>x&&typeof x==='object').slice(0,50000);if(o.budgets&&typeof o.budgets==='object'&&!Array.isArray(o.budgets))d.budgets=o.budgets;if(o.fiscal&&typeof o.fiscal==='object'&&!Array.isArray(o.fiscal))d.fiscal=o.fiscal;if(o.preferences&&typeof o.preferences==='object')d.preferences={...d.preferences,...o.preferences};d.demo=!!o.demo;return d}
 let db=load();let st={highlightTx:null,view:'dashboard',month:currentMonth,taxYear:String(new Date().getFullYear()) in taxData?String(new Date().getFullYear()):'2026',transactionFilter:'all',search:'',modal:null};
-function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('No se pudo guardar en este navegador. Exporta una copia de tus datos.');return false}render();return true}
+function save(){
+  if(window.BRUJULA_CLOUD_ENABLED){
+    if(!window.brujulaCloud?.ready){toast('Inicia sesión y espera a cargar tu cuenta antes de hacer cambios.');return false}
+    const queued=window.brujulaCloud.enqueue(db);
+    if(queued)render();
+    return queued;
+  }
+  try{localStorage.setItem(KEY,JSON.stringify(db))}
+  catch(e){toast('No se pudo guardar en este navegador. Exporta una copia de tus datos.');return false}
+  render();return true
+}
 function toast(message){const el=document.getElementById('toast-root');el.innerHTML=`<div class="toast">${safe(message)}</div>`;clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.innerHTML='',3400)}
 function icon(name){return `<svg width="19" height="19" style="vertical-align:middle"><use href="#i-${name}"/></svg>`}
 function button(label,act,extra=''){return `<button type="button" class="btn ${extra}" data-action="${act}">${label}</button>`}
