@@ -60,7 +60,115 @@ function budgetMini(spends){const bud=db.budgets[st.month]||{};let keys=Object.k
 function budgetRow(c,limit,spent,edit=false){let p=percent(spent,limit);return `<div><div class="budget-row-head"><b>${safe(c)}</b><span>${short(spent)} <span class="muted">/ ${short(limit)}</span> ${edit?`<button class="tiny-link" data-action="budgetEdit" data-category="${safe(c)}" style="margin-left:6px">Editar</button>`:''}</span></div><div class="progress-track"><div class="progress-fill ${p>=100?'red':p>=80?'orange':''}" style="width:${clamp(p)}%"></div></div><div class="budget-row-foot"><span>${p}% usado</span><span>${spent>limit?`Exceso: ${pesos(spent-limit)}`:`Disponible: ${pesos(limit-spent)}`}</span></div></div>`}
 function transactionTable(list,compact=false){if(!list.length)return emptyState('No hay movimientos registrados','Agrega ingresos o gastos para empezar a visualizar tu economía.','addTx','Añadir movimiento');return `<div class="table-wrap"><table><thead><tr><th>Movimiento</th><th>Categoría</th><th>Fecha</th><th style="text-align:right">Monto</th>${compact?'':'<th>Acciones</th>'}</tr></thead><tbody>${list.map(t=>`<tr class="${t.id===st.highlightTx?'tx-new-row':''}"><td><strong>${safe(t.note|| (t.kind==='income'?'Ingreso':'Gasto'))}</strong><div class="muted" style="margin-top:3px;font-size:11px">${safe(t.account==='cash'?'Efectivo':t.account==='bank'&&t.method==='Efectivo'?'Transferencia':t.method||'Sin método')} · ${safe(t.account==='cash'?'Efectivo':t.account==='bank'?'Cuenta':String(t.method||'').toLowerCase()==='efectivo'?'Efectivo':'Cuenta')}</div></td><td><span class="tag">${safe(t.category)}</span></td><td>${prettyDate(t.date)}</td><td style="text-align:right" class="amount ${t.kind}">${t.kind==='income'?'+':'−'}${pesos(t.amount)}</td>${compact?'':`<td><div class="actions-row"><button class="btn small ghost" data-action="editTx" data-id="${safe(t.id)}" aria-label="Editar movimiento">Editar</button><button class="btn small ghost" style="color:var(--red)" data-action="deleteTx" data-id="${safe(t.id)}" aria-label="Eliminar movimiento">Eliminar</button></div></td>`}</tr>`).join('')}</tbody></table></div>`}
 function transactions(){let list=txMonth().filter(t=>st.transactionFilter==='all'||t.kind===st.transactionFilter).filter(t=>(t.note+' '+t.category+' '+t.method).toLowerCase().includes(st.search.toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date));let total=metrics();return `<div class="cards" style="grid-template-columns:repeat(3,minmax(0,1fr))">${metricCard('Ingresos',total.income,'↑','green','Este mes')}${metricCard('Gastos',total.expense,'↓','orange','Este mes')}${metricCard('Saldo',total.left,'≈','blue','Ingresos menos gastos')}</div>${section('Registro de movimientos','Puedes corregir o eliminar cada movimiento.','Exportar CSV','csv')}<div class="panel"><div class="filter-row"><input id="tx-search" placeholder="Buscar por descripción, categoría..." value="${safe(st.search)}"><select id="tx-filter"><option value="all" ${st.transactionFilter==='all'?'selected':''}>Todos los tipos</option><option value="income" ${st.transactionFilter==='income'?'selected':''}>Solo ingresos</option><option value="expense" ${st.transactionFilter==='expense'?'selected':''}>Solo gastos</option></select>${button('+ Movimiento','addTx','primary small')}</div><div id="tx-table">${transactionTable(list)}</div></div>`}
-function budgets(){let bd=db.budgets[st.month]||{},sp=spendCat();let total=cat.reduce((s,c)=>s+num(bd[c]),0),spent=cat.reduce((s,c)=>s+num(sp[c]),0);return `<div class="notice"><span class="notice-symbol">▤</span><div><b>Un límite para cada categoría</b><p>Los presupuestos se guardan por mes. Puedes copiar los valores del mes anterior y ajustarlos sin modificar los meses pasados.</p></div></div><div class="cards" style="grid-template-columns:repeat(3,minmax(0,1fr))">${metricCard('Presupuesto asignado',total,'▣','blue','Suma de límites')}${metricCard('Gastos reales',spent,'↓','orange','Registrados este mes')}${metricCard('Diferencia',total-spent,'≈','green','Presupuesto menos gastos')}</div>${section('Tus límites de gasto',monthName(st.month),'Copiar mes anterior','copyBudgets')}<div class="panel"><div class="budget-list">${cat.map(c=>budgetRow(c,num(bd[c]),num(sp[c]),true)).join('')}</div><div class="hr"></div><div class="soft info">Un gasto puede existir aunque no hayas creado presupuesto para su categoría. El presupuesto no es un saldo de cuenta bancaria.</div></div>`}
+const budgetArtwork={
+ 'Alimentación':'🍲','Vivienda':'🏡','Transporte':'🛵','Servicios':'💡',
+ 'Salud':'🩺','Educación':'🎓','Deudas':'💳','Familia':'👨‍👩‍👧',
+ 'Entretenimiento':'🎮','Otros':'📦'
+};
+const budgetStatus=(limit,spent)=>{
+  if(limit<=0)return {label:'Sin asignar',tone:'neutral'};
+  if(spent>limit)return {label:'Excedido',tone:'danger'};
+  if(spent>=limit)return {label:'Límite alcanzado',tone:'danger'};
+  if(spent/limit>=0.8)return {label:'Cerca del límite',tone:'warning'};
+  return {label:'Dentro del límite',tone:'good'};
+};
+function budgetCategoryCard(c,budget,spent,index){
+ const hasLimit=budget>0;
+ const percentage=hasLimit?Math.round(spent/budget*100):0;
+ const status=budgetStatus(budget,spent);
+ const left=budget-spent;
+ return `<article class="budget-category-card budget-theme-${index%5}" aria-label="Presupuesto de ${safe(c)}">
+   <div class="budget-category-card-head">
+     <span class="budget-illustration" role="img" aria-label="Categoría ${safe(c)}">${budgetArtwork[c]||'📦'}</span>
+     <button type="button" class="budget-card-edit" data-action="budgetEdit" data-category="${safe(c)}" aria-label="Editar presupuesto de ${safe(c)}" title="Editar presupuesto de ${safe(c)}">
+       <span aria-hidden="true" class="budget-edit-pencil">✎</span><span>Editar</span>
+     </button>
+   </div>
+   <h3>${safe(c)}</h3>
+   <div class="budget-card-caption">Presupuesto asignado</div>
+   <div class="budget-card-amount">${hasLimit?pesos(budget):'Sin definir'}</div>
+   <div class="budget-card-progress" role="progressbar" aria-label="Uso del presupuesto de ${safe(c)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(100,percentage)}">
+     <span class="budget-card-progress-bar ${status.tone}" style="width:${Math.min(100,Math.max(0,percentage))}%"></span>
+   </div>
+   <div class="budget-card-spent"><span>Gastado este mes</span><strong>${pesos(spent)}</strong></div>
+   <div class="budget-card-bottom">
+     <span class="budget-status budget-status-${status.tone}">${status.label}</span>
+     <span class="budget-card-remaining">${!hasLimit?'Sin límite definido':left>=0?'Quedan '+pesos(left):'Exceso '+pesos(-left)}</span>
+   </div>
+ </article>`;
+}
+function budgetOverviewItem(c,budget,spent,index){
+ const assigned=budget>0;
+ const percentage=assigned?Math.round(spent/budget*100):0;
+ const state=budgetStatus(budget,spent);
+ const remaining=budget-spent;
+ return `<div class="budget-overview-item">
+   <div class="budget-overview-category">
+     <span class="budget-overview-illustration budget-theme-${index%5}" aria-hidden="true">${budgetArtwork[c]||'📦'}</span>
+     <div><strong>${safe(c)}</strong><small class="budget-status budget-status-${state.tone}">${state.label}</small></div>
+   </div>
+   <div class="budget-overview-value"><small>Asignado</small><strong>${assigned?pesos(budget):'Sin definir'}</strong></div>
+   <div class="budget-overview-value"><small>Gastado</small><strong>${pesos(spent)}</strong></div>
+   <div class="budget-overview-remaining"><small>${assigned&&remaining<0?'Exceso':'Disponible'}</small>
+     <strong>${assigned?pesos(Math.abs(remaining)):'—'}</strong>
+     <span class="budget-overview-track" role="progressbar" aria-label="Uso de ${safe(c)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(100,percentage)}">
+       <span class="budget-overview-fill ${state.tone}" style="width:${Math.min(100,Math.max(0,percentage))}%"></span>
+     </span>
+   </div>
+   <button type="button" class="budget-overview-edit" data-action="budgetEdit" data-category="${safe(c)}" aria-label="Editar presupuesto de ${safe(c)}" title="Editar presupuesto de ${safe(c)}">
+     <span class="budget-edit-pencil" aria-hidden="true">✎</span><span>Editar</span>
+   </button>
+ </div>`;
+}
+function budgets(){
+ const bd=db.budgets[st.month]||{},sp=spendCat();
+ const budgetTotal=cat.reduce((total,c)=>total+num(bd[c]),0);
+ const spentTotal=cat.reduce((total,c)=>total+num(sp[c]),0);
+ const used=budgetTotal>0?Math.round(spentTotal/budgetTotal*100):0;
+ const count=cat.filter(c=>num(bd[c])>0).length;
+ return `<section class="budget-page-hero">
+   <div class="budget-page-hero-copy">
+     <span class="badge-year">CONTROL POR CATEGORÍAS</span>
+     <h2>Tu dinero, organizado a tu manera</h2>
+     <p>Desliza las tarjetas para consultar cada categoría y toca <strong>Editar</strong> para asignar su presupuesto. Los límites se guardan por mes.</p>
+   </div>
+   <div class="budget-page-hero-month">${safe(monthName(st.month))}</div>
+ </section>
+ <section class="budget-featured" aria-label="Presupuestos por categoría">
+   <div class="budget-featured-header">
+     <div><h3>Explora tus categorías</h3><p>Desliza a los lados para verlas todas</p></div>
+     <div class="budget-carousel-controls">
+       <button type="button" class="budget-carousel-arrow" data-action="budgetsPrev" aria-label="Ver categorías anteriores" title="Anterior">‹</button>
+       <button type="button" class="budget-carousel-arrow" data-action="budgetsNext" aria-label="Ver siguientes categorías" title="Siguiente">›</button>
+     </div>
+   </div>
+   <div id="budget-featured-track" class="budget-featured-track" role="region" aria-label="Tarjetas de presupuestos desplazables" tabindex="0">
+     ${cat.map((c,index)=>budgetCategoryCard(c,num(bd[c]),num(sp[c]),index)).join('')}
+   </div>
+   <div class="budget-carousel-help">Desliza ← → o utiliza los botones para explorar las 10 categorías</div>
+ </section>
+ <section class="budget-full-picture" aria-labelledby="budget-full-heading">
+   <div class="budget-full-header">
+     <div><span class="badge-year">PANORAMA DEL MES</span><h2 id="budget-full-heading">Resumen completo de tus presupuestos</h2>
+       <p>${count} de ${cat.length} categorías con presupuesto definido · ${safe(monthName(st.month))}</p></div>
+     <button type="button" class="btn budget-copy-month" data-action="copyBudgets">Copiar presupuestos del mes anterior</button>
+   </div>
+   <div class="budget-summary-stats">
+     <div><span>Presupuesto asignado</span><strong>${pesos(budgetTotal)}</strong></div>
+     <div><span>Gasto del mes</span><strong>${pesos(spentTotal)}</strong></div>
+     <div class="${spentTotal>budgetTotal?'over-budget':''}"><span>Diferencia</span><strong>${pesos(budgetTotal-spentTotal)}</strong></div>
+   </div>
+   <div class="budget-overall-progress">
+     <div><strong>Uso del presupuesto total</strong><span>${budgetTotal?used+'% utilizado':'Sin límites definidos'}</span></div>
+     <div class="budget-overall-progress-track"><div class="budget-overall-progress-fill ${used>=100?'danger':used>=80?'warning':'good'}" style="width:${Math.min(100,Math.max(0,used))}%"></div></div>
+   </div>
+   <div class="budget-overview-list" aria-label="Todas las categorías y sus presupuestos">
+     ${cat.map((c,index)=>budgetOverviewItem(c,num(bd[c]),num(sp[c]),index)).join('')}
+   </div>
+   <p class="budget-footnote">Los presupuestos son límites de gasto, no dinero separado de tus cuentas. Los gastos se actualizan con los movimientos de cada mes. Una categoría puede registrar gastos aunque no tenga límite definido.</p>
+ </section>`;
+}
+
 function goals(){let all=db.goals;let totalGoal=all.reduce((a,g)=>a+num(g.target),0),gSaved=all.reduce((a,g)=>a+goalSum(g),0);const funding=goalFunding();return `<div class="hero"><div><span class="badge-year">METAS CONCRETAS</span><h2 style="margin-top:10px">Dale un destino a tu dinero</h2><p>Registra lo que realmente apartas para tus metas. Los aportes se contabilizan por separado de los gastos para evitar duplicarlos.</p></div>${button('+ Nueva meta','addGoal','primary')}</div><section class="goal-funds-summary" aria-label="Dinero para metas"><div><span>Dinero total</span><strong>${pesos(funding?.total??0)}</strong></div><div><span>Ahorrado en metas</span><strong>${pesos(funding?.reserved??gSaved)}</strong></div><div class="goal-funds-free"><span>Disponible para aportar</span><strong>${pesos(funding?.unallocated??0)}</strong></div><p>El ahorro reservado ya está dentro del dinero de tus cuentas y efectivo; no se cuenta dos veces.</p></section><div class="cards" style="grid-template-columns:repeat(3,minmax(0,1fr))">${metricCard('Metas activas',all.length,'◇','purple','Objetivos registrados')}${metricCard('Total de objetivos',totalGoal,'◎','blue','Dinero que quieres acumular')}${metricCard('Total apartado',gSaved,'↑','green','Aportes registrados')}</div>${section('Objetivos de ahorro','Progreso acumulado de tus metas')}${all.length?`<div class="goal-grid">${all.map(g=>{let s=goalSum(g),p=percent(s,num(g.target));return `<article class="panel goal-card"><div class="goal-top"><span class="tag info">${safe(g.icon||'🎯')} ${g.deadline?'Meta con fecha':'Meta personal'}</span><button class="btn small ghost" data-action="deleteGoal" data-id="${safe(g.id)}" aria-label="Eliminar meta">Eliminar</button></div><h3>${safe(g.title)}</h3><p>${g.deadline?'Fecha objetivo: '+prettyDate(g.deadline):'Sin fecha límite'}</p><div class="goal-total">${pesos(s)}</div><div class="muted small">de ${pesos(g.target)} · ${p}% completado</div><div class="progress-track" style="height:10px;margin-top:13px"><div class="progress-fill" style="width:${clamp(p)}%"></div></div><div class="goal-actions"><button class="btn small primary" data-action="addContribution" data-id="${safe(g.id)}">+ Añadir aporte</button><button class="btn small" data-action="goalHistory" data-id="${safe(g.id)}">Ver aportes</button></div></article>`}).join('')}</div>`:emptyState('Tu primera meta comienza aquí','Crea una meta para fondo de emergencia, estudios, vacaciones o lo que quieras.','addGoal','Crear meta')}`}
 function fiscalRecord(y){return {patrimony:null,card:null,purchases:null,deposits:null,additional:0,vat:false,...(db.fiscal[y]||{})}}
 function taxResults(y){let f=fiscalRecord(y),uvt=taxData[y].uvt,limit=1400*uvt,wealth=4500*uvt;let ledger=sum(byKind(txYear(y),'income'));let extra=num(f.additional),income=ledger+extra;let rows=[{name:'Ingresos brutos',value:income,limit,mode:'gte',detail:'Ingresos registrados durante el año + ingresos adicionales.'},{name:'Patrimonio bruto al 31 de diciembre',value:f.patrimony,limit:wealth,mode:'gt',detail:'Bienes y derechos antes de restar deudas.'},{name:'Consumos con tarjeta de crédito',value:f.card,limit,mode:'gt',detail:'Total anual de consumos con tarjetas de crédito.'},{name:'Compras y consumos',value:f.purchases,limit,mode:'gt',detail:'Compras y consumos anuales, registrados por separado.'},{name:'Consignaciones, depósitos e inversiones',value:f.deposits,limit,mode:'gt',detail:'Total acumulado anual. No equivale necesariamente a ingresos.'}];let flagged=rows.filter(r=>r.value!==null&& (r.mode==='gte'?num(r.value)>=r.limit:num(r.value)>r.limit));return{f,uvt,limit,wealth,rows,flagged,ledger,obligated:flagged.length>0||!!f.vat}}
