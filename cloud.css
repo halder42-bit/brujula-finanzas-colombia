@@ -1,0 +1,48 @@
+/* Brújula Cloud: pantalla de acceso y estado de sincronización */
+html.brujula-cloud-enabled:not(.brujula-cloud-ready) #app {visibility:hidden}
+html.brujula-cloud-enabled:not(.brujula-cloud-ready) #modal-root {visibility:hidden}
+#brujula-cloud-gate[hidden] {display:none!important}
+#brujula-cloud-gate{
+ position:fixed;z-index:99999;inset:0;overflow-y:auto;display:flex;
+ align-items:center;justify-content:center;padding:28px 14px;
+ background:radial-gradient(circle at 30% 0%,#1d625b 0%,transparent 40%),
+            linear-gradient(145deg,#10192b,#172940 70%,#162e35);
+ color:#e8f8f5;
+}
+.cloud-gate-card{width:min(100%,495px);border:1px solid #437779;background:#1c2e41;
+ border-radius:24px;padding:clamp(20px,5vw,38px);box-shadow:0 25px 65px #03091777}
+.cloud-brand{color:#80e7bd;font-size:24px;font-weight:850;letter-spacing:-.6px;margin-bottom:29px}
+.cloud-brand span{color:#aec2cb;font-size:12px;letter-spacing:0;font-weight:600}
+.cloud-gate-card h2{font-size:clamp(24px,4vw,31px);margin:0 0 14px;letter-spacing:-.6px}
+.cloud-gate-card p{font-size:13px;line-height:1.7;color:#c3d6df;margin:10px 0 20px}
+.cloud-auth-form{display:grid;gap:12px;margin-top:25px}
+.cloud-auth-form label{font-size:13px;font-weight:750}
+.cloud-auth-form input{height:50px;min-width:0;border-radius:12px;padding:12px 15px;font-size:15px;
+ background:#0d1c2c;border:1px solid #5b7c8a;color:#fff;width:100%;outline-offset:4px}
+.cloud-gate-card button{cursor:pointer}
+.cloud-primary-btn,.cloud-secondary-btn{
+ display:block;width:100%;border-radius:12px;border:1px solid #75cbb7;
+ min-height:48px;font-weight:750;font-size:13px;padding:12px;margin-top:10px;text-align:center;
+}
+.cloud-primary-btn{background:#53cd9a;color:#0d2929}
+.cloud-secondary-btn{background:#254659;color:#e3fff7;border-color:#4c8e91}
+.cloud-text-btn{display:block;width:100%;color:#b8dcdf;background:transparent;border:0;
+ font-size:12px;padding:13px;text-decoration:underline}
+.cloud-gate-note{font-size:11px!important;line-height:1.65!important;color:#a9c3cb!important;margin-top:18px!important}
+.cloud-gate-message{padding:13px;border-radius:12px;background:#315165;border:1px solid #568a97;color:#f0fffa!important;overflow-wrap:anywhere}
+.cloud-migrate-tip{margin:20px 0;padding:16px;border:1px solid #4e8f82;border-radius:13px;background:#183d41}
+.cloud-migrate-tip strong{font-size:13px;color:#c8ffe3}
+.cloud-migrate-tip p{margin:5px 0 0!important}
+.cloud-spinner{width:31px;height:31px;border-radius:50%;border:3px solid #4e807a;border-top-color:#b8ffe2;
+ animation:cloudSpin .8s linear infinite;margin:24px auto}
+@keyframes cloudSpin{to{transform:rotate(360deg)}}
+.cloud-sidebar-btn{display:block;width:100%;min-height:36px;padding:9px 10px;margin-top:9px;
+ border-radius:9px;background:#24465b;color:#e5faf7;border:1px solid #54827f;
+ font-size:12px;font-weight:650}
+.cloud-logout{background:transparent;color:#d9dfe7;border-color:#5a677f}
+#cloud-user-email{overflow-wrap:anywhere}
+#cloud-sync-status[data-kind="error"]{color:#ffb7af!important}
+#cloud-sync-status[data-kind="pending"]{color:#ffe2a0!important}
+html.brujula-cloud-ready .sidebar-bottom .side-badge{background:#184f44}
+@media(max-width:640px){#brujula-cloud-gate{padding:16px 10px;align-items:flex-start}.cloud-gate-card{margin:auto 0}}
+@media(prefers-reduced-motion:reduce){.cloud-spinner{animation:none}}
