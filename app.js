@@ -126,6 +126,8 @@ function budgets(){
  const spentTotal=cat.reduce((total,c)=>total+num(sp[c]),0);
  const used=budgetTotal>0?Math.round(spentTotal/budgetTotal*100):0;
  const count=cat.filter(c=>num(bd[c])>0).length;
+ const featuredCats=[...cat].sort((a,b)=>
+   Number(num(bd[b])>0)-Number(num(bd[a])>0) || cat.indexOf(a)-cat.indexOf(b));
  return `<section class="budget-page-hero">
    <div class="budget-page-hero-copy">
      <span class="badge-year">CONTROL POR CATEGORÍAS</span>
@@ -143,7 +145,7 @@ function budgets(){
      </div>
    </div>
    <div id="budget-featured-track" class="budget-featured-track" role="region" aria-label="Tarjetas de presupuestos desplazables" tabindex="0">
-     ${cat.map((c,index)=>budgetCategoryCard(c,num(bd[c]),num(sp[c]),index)).join('')}
+     ${featuredCats.map(c=>budgetCategoryCard(c,num(bd[c]),num(sp[c]),cat.indexOf(c))).join('')}
    </div>
    <div class="budget-carousel-help">Desliza ← → o utiliza los botones para explorar las 10 categorías</div>
  </section>
