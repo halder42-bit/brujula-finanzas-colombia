@@ -37,7 +37,7 @@
     return data;
   };
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+    const raw = window.BRUJULA_CLOUD_ENABLED ? null : JSON.parse(localStorage.getItem(KEY) || 'null');
     db.wallets = readWallet(raw?.wallets);
     db.transfers = readTransfers(raw?.transfers);
   } catch {
