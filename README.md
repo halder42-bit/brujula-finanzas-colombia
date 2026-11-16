@@ -1,4 +1,56 @@
-# Brújula — Finanzas personales v4.6
+# Brújula — Finanzas y Vida v5.0
+
+## Nube opcional: cuentas privadas + sincronización entre dispositivos
+
+**Estado al publicar este código:** la nube NO está activa hasta que se configure un proyecto propio de Supabase. Mientras `cloud-config.js` tenga URL y clave pública vacías, Brújula sigue guardando los datos localmente y no los envía a Internet.
+
+La aplicación es un sitio estático de GitHub Pages. Supabase proporciona autenticación por correo y una tabla PostgreSQL con **Row Level Security (RLS)** para que un usuario no pueda leer ni editar las filas de otro.
+
+### Activación, paso a paso
+
+1. Entra a [Supabase](https://supabase.com/dashboard), crea una cuenta e inicia un **New project**.
+2. En tu proyecto abre **SQL Editor → New query**. Copia el contenido completo de [supabase/schema.sql](./supabase/schema.sql) y ejecútalo con **Run**. Debe crear `public.brujula_data` y sus políticas RLS.
+3. En **Authentication → URL Configuration**, coloca en **Site URL**: `https://halder42-bit.github.io/brujula-finanzas-colombia/`. Añade exactamente la misma dirección en **Redirect URLs** (incluyendo la barra final).
+4. Confirma que el proveedor de correo electrónico esté habilitado en **Authentication → Providers → Email**. El inicio de sesión de Brújula utiliza enlaces enviados al correo (Magic Link).
+5. Copia desde **Project Settings → API Keys** (o **Connect**) la **Project URL** que termina en `.supabase.co` y la **publishable key** (o la antigua clave `anon`). **Nunca copies la secret key o service_role al repositorio.**
+6. En GitHub edita [cloud-config.js](./cloud-config.js) y sustituye los dos valores vacíos por estos datos **públicos**:
+   ```js
+   window.BRUJULA_CLOUD = Object.freeze({
+     url: 'https://TU-PROYECTO.supabase.co',
+     publishableKey: 'sb_publishable_TU_CLAVE_PUBLICA'
+   });
+   ```
+   Conserva el resto del archivo y haz **Commit changes**.
+7. Abre tu GitHub Pages y actualiza la página. Ya debe aparecer **Ingresa a tu cuenta**. Escribe tu correo, solicita el enlace y ábrelo desde el mismo navegador o uno con acceso a tu correo.
+8. Si Brújula detecta datos antiguos en ese navegador, utiliza **Descargar respaldo local** y luego **Importar mis datos locales a la nube**, solo cuando esos datos te pertenezcan. La app crea la fila remota primero y solo elimina la copia local tras confirmar el guardado.
+9. Inicia sesión desde otro dispositivo con **el mismo correo** para consultar tu información. Desde la barra lateral puedes actualizarla o cerrar sesión.
+
+### Cómo evita mezclar información
+
+- La tabla `brujula_data` tiene una fila por `auth.users.id`, protegida por RLS.
+- La app solicita acceso con el token del usuario y nunca almacena claves privadas.
+- Cuando la nube está activa, **Brújula no escribe los datos financieros nuevos en el `localStorage` compartido del navegador**. Supabase sí guarda su sesión de autenticación en el dispositivo.
+- Si otro dispositivo guarda una versión diferente, la revisión numérica evita que la escritura más antigua la sobrescriba silenciosamente. El usuario puede descargar el estado sin guardar y volver a cargar la nube.
+- El sistema muestra el estado **Guardado en la nube**, **Cambios pendientes** o **Sin guardar**. Nunca presupongas que los cambios están sincronizados si no aparece la confirmación.
+- Las copias JSON pueden contener información financiera privada. Guárdalas en un lugar seguro.
+
+### Limitaciones importantes
+
+- El modo nube necesita conexión a Internet. Si se cae la conexión durante una edición, el sistema avisa que hay cambios pendientes y trata de reintentarlo. **No cierres la pestaña hasta confirmar el guardado**.
+- Es un primer diseño de sincronización de documento completo, no un sistema multiusuario en tiempo real. Si haces cambios simultáneos desde dos dispositivos, se detectará conflicto y podría requerirse combinar manualmente los registros.
+- El servidor y su disponibilidad dependen del proyecto Supabase que conectes. Las políticas RLS deben probarse en un proyecto real antes de ofrecer la aplicación a terceros.
+- No compartas contraseñas, secretos ni claves `service_role`. La configuración pública sí puede aparecer en GitHub porque RLS controla el acceso.
+- La URL `https://halder42-bit.github.io/brujula-finanzas-colombia/` es la dirección prevista. Si publicas en otro dominio, actualiza los permisos de redirección en Supabase.
+
+### Archivos nuevos v5
+
+- `cloud-config.js`: configuración pública opcional.
+- `cloud.js`: login, migración, estado de guardado, control de versiones y cierre de sesión.
+- `cloud.css`: pantalla de acceso y avisos.
+- `supabase/schema.sql`: tabla PostgreSQL con aislamiento por usuario.
+
+---
+
 
 ## Nueva experiencia en Presupuestos
 
