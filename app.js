@@ -34,6 +34,7 @@ const txYear=(y)=>db.transactions.filter(t=>typeof t.date==='string'&&t.date.sli
 const byKind=(records,kind)=>records.filter(x=>x.kind===kind);
 const spendCat=(m=st.month)=>{let out={};for(let x of byKind(txMonth(m),'expense'))out[x.category]=(out[x.category]||0)+num(x.amount);return out};
 const goalSum=g=>sum(db.goalEntries.filter(e=>e.goalId===g.id));
+const goalFunding=()=>typeof window.brujulaWalletSummary==='function' ? window.brujulaWalletSummary() : null;
 const monthReserve=(m=st.month)=>sum(db.goalEntries.filter(e=>typeof e.date==='string'&&e.date.slice(0,7)===m));
 function changeMonth(delta){let [y,m]=st.month.split('-').map(Number);let d=new Date(y,m-1+delta,1);st.month=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;render()}
 function render(){document.querySelectorAll('[data-nav]').forEach(x=>{const active=x.dataset.nav===st.view;x.classList.toggle('active',active);x.setAttribute('aria-current',active?'page':'false')});renderTop();let v=document.getElementById('view');v.innerHTML=({dashboard:dashboard,transactions:transactions,budgets:budgets,goals:goals,taxes:taxes,tasks:tasks,settings:settings}[st.view]||dashboard)();}
@@ -94,7 +95,24 @@ function openTx(t,initialKind){
 }
 function budgetEdit(c){let v=num((db.budgets[st.month]||{})[c]);showModal('Presupuesto: '+c,`<form id="budget-form" data-category="${safe(c)}" class="form-grid"><p class="small muted field full" style="margin:0">Define el límite de gasto para ${safe(monthName(st.month))}. Usa 0 para quitar el límite.</p><div class="field full"><label>Límite para ${safe(c)} (COP)</label><input name="amount" type="number" min="0" step="1" value="${v}" required></div><div class="field full"><button type="submit" class="btn primary full">Guardar presupuesto</button></div></form>`)}
 function openGoal(){showModal('Crear meta de ahorro',`<form id="goal-form" class="form-grid"><div class="field full"><label>Nombre de la meta</label><input name="title" required maxlength="80" placeholder="Ej: Fondo de emergencia"></div><div class="field"><label>Objetivo (COP)</label><input name="target" type="number" min="1" step="1" required placeholder="Ej: 1000000"></div><div class="field"><label>Fecha objetivo (opcional)</label><input type="date" name="deadline"></div><div class="field full"><button type="submit" class="btn primary full">Crear meta</button></div></form>`)}
-function openContribution(g){showModal('Aporte a '+g.title,`<form id="contribution-form" data-goal="${safe(g.id)}" class="form-grid"><div class="field"><label>Monto apartado (COP)</label><input name="amount" type="number" min="1" step="1" required></div><div class="field"><label>Fecha</label><input name="date" type="date" value="${today()}" required></div><div class="field full"><div class="soft">Este aporte se contabiliza como ahorro apartado, no como gasto nuevo. Registra aportes que hayas separado realmente.</div></div><div class="field full"><button type="submit" class="btn primary full">Registrar aporte</button></div></form>`)}
+function openContribution(g){
+  const funds=goalFunding();
+  const free=Math.max(0,Math.floor(funds?.unallocated??0));
+  const remaining=Math.max(0,Math.floor(num(g.target)-goalSum(g)));
+  const maxAmount=Math.min(free,remaining);
+  showModal('Aporte a '+g.title,`<form id="contribution-form" data-goal="${safe(g.id)}" class="form-grid">
+    <div class="field full"><div class="goal-contribution-note">
+      <span>Dinero libre para aportar: <strong>${pesos(free)}</strong></span>
+      <span>Pendiente para completar la meta: <strong>${pesos(remaining)}</strong></span>
+    </div></div>
+    <div class="field"><label for="goal-contribution-amount">Monto apartado (COP)</label>
+      <input id="goal-contribution-amount" name="amount" type="number" min="1" step="1" max="${maxAmount}" required ${maxAmount===0?'disabled':''}>
+    </div>
+    <div class="field"><label>Fecha</label><input name="date" type="date" value="${today()}" max="${today()}" required></div>
+    <div class="field full"><div class="soft">${maxAmount===0?'No tienes dinero libre para aportar. Registra ingresos o revisa tus ahorros anteriores.':'Máximo que puedes aportar ahora: '+pesos(maxAmount)+'.'} Este importe queda reservado de tu dinero existente, sin contarlo como ingreso o gasto.</div></div>
+    <div class="field full"><button type="submit" class="btn primary full" ${maxAmount===0?'disabled':''}>Registrar aporte</button></div>
+  </form>`);
+}
 function history(g){let entries=db.goalEntries.filter(e=>e.goalId===g.id).sort((a,b)=>b.date.localeCompare(a.date));showModal('Aportes a '+g.title,entries.length?`<div class="task-list">${entries.map(e=>`<div class="task"><div class="task-text"><b>${pesos(e.amount)}</b><p>${prettyDate(e.date)}</p></div><button class="btn small ghost" data-action="removeContribution" data-id="${safe(e.id)}">Eliminar</button></div>`).join('')}</div>`:emptyState('Todavía no hay aportes','Añade un monto que hayas apartado para esta meta.'))}
 function openTask(){showModal('Nueva tarea',`<form id="task-form" class="form-grid"><div class="field full"><label>Tarea</label><input name="title" maxlength="160" required placeholder="Ej: Pagar servicio de luz"></div><div class="field"><label>Fecha límite</label><input name="due" type="date"></div><div class="field"><label>Prioridad</label><select name="priority"><option>Media</option><option>Alta</option><option>Baja</option></select></div><div class="field full"><button type="submit" class="btn primary full">Guardar tarea</button></div></form>`)}
 function download(content,name,type){let b=new Blob([content],{type});let u=URL.createObjectURL(b);let a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2500)}
@@ -135,7 +153,22 @@ document.addEventListener('submit',e=>{e.preventDefault();const f=e.target,a=new
 }
 else if(f.id==='budget-form'){let amount=Number(a.get('amount'));if(!Number.isFinite(amount)||amount<0||amount>1e15)return toast('Presupuesto inválido');db.budgets[st.month]??={};db.budgets[st.month][f.dataset.category]=amount;closeModal();save();toast('Presupuesto actualizado')}
 else if(f.id==='goal-form'){let target=Number(a.get('target'));if(!Number.isFinite(target)||target<=0||target>1e15)return toast('Meta inválida');db.goals.push({id:id(),title:String(a.get('title')).slice(0,80),target,deadline:String(a.get('deadline')||'')});closeModal();save();toast('Meta creada')}
-else if(f.id==='contribution-form'){let amount=Number(a.get('amount'));if(!Number.isFinite(amount)||amount<=0||amount>1e15)return toast('Monto inválido');db.goalEntries.push({id:id(),goalId:f.dataset.goal,amount,date:String(a.get('date'))});closeModal();save();toast('Aporte guardado')}
+else if(f.id==='contribution-form'){
+  const goal=db.goals.find(g=>g.id===f.dataset.goal);
+  if(!goal)return toast('La meta seleccionada ya no existe.');
+  const amount=Number(a.get('amount'));
+  if(!Number.isSafeInteger(amount)||amount<=0||amount>1e15)return toast('El aporte debe ser un número entero positivo.');
+  const date=String(a.get('date')||'');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date))||date>today())return toast('Selecciona una fecha válida no futura.');
+  const funds=goalFunding();
+  if(!funds)return toast('Primero registra cuánto dinero tienes en efectivo y en cuenta.');
+  const free=Math.max(0,Math.floor(funds.unallocated));
+  if(amount>free)return toast('Solo tienes '+pesos(free)+' libres. No puedes aportar dinero que no tienes.');
+  const remaining=Math.max(0,Math.floor(num(goal.target)-goalSum(goal)));
+  if(amount>remaining)return toast('A esta meta solo le faltan '+pesos(remaining)+' para completarse.');
+  db.goalEntries.push({id:id(),goalId:goal.id,amount,date});
+  closeModal();save();toast('Aporte reservado correctamente');
+}
 else if(f.id==='task-form'){db.tasks.push({id:id(),title:String(a.get('title')).slice(0,160),due:String(a.get('due')||''),priority:String(a.get('priority')||'Media'),done:false});closeModal();save();toast('Tarea creada')}
 else if(f.id==='profile-form'){db.preferences.name=String(a.get('name')||'').slice(0,80);db.preferences.savingsTarget=Math.max(0,num(a.get('savingsTarget')));save();toast('Preferencias guardadas')}
 else if(f.id==='fiscal-form'){let y=st.taxYear,next={};for(let x of ['patrimony','card','purchases','deposits']){let raw=String(a.get(x)||'').trim();next[x]=raw===''?null:Number(raw);if(next[x]!==null&&(!Number.isFinite(next[x])||next[x]<0||next[x]>1e15))return toast('Valor fiscal inválido')}next.additional=Math.max(0,num(a.get('additional')));next.vat=a.get('vat')!==null;db.fiscal[y]=next;save();toast('Evaluación tributaria guardada')}
