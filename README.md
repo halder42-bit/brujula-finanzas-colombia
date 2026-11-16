@@ -1,4 +1,19 @@
-# Brújula — Finanzas personales v4.1
+# Brújula — Finanzas personales v4.4
+
+## Saldo total y metas de ahorro realistas
+
+- En el inicio se muestran **Dinero total (efectivo + cuenta)**, ambos saldos separados, **Reservado para metas** y **Libre para gastar o ahorrar**.
+- La reserva en metas **no es un gasto ni un ingreso**, y no incrementa tu saldo total. Es dinero de tus cuentas que queda marcado como reservado.
+- Los aportes a metas se limitan al dinero libre, descontando los aportes hechos a **todas** las metas; también se limitan a lo que falta para completar cada meta.
+- Se rechazan aportes negativos, decimales, futuros, superiores a los fondos libres y dirigidos a metas inexistentes.
+- Los usuarios con aportes antiguos que superan el saldo real ven una advertencia. Los registros existentes no se borran automáticamente.
+- Si registras un gasto que reduce el dinero total por debajo de lo reservado, el saldo libre se muestra como $0 con una advertencia: no se borran ahorros antiguos por sorpresa.
+- Todo sigue guardado de manera local en el navegador. Se recomienda exportar un respaldo JSON antes de hacer cambios significativos.
+
+**Pruebas:** 31 escenarios de código revisados para esta actualización, entre ellos varias metas, dinero insuficiente, importación de datos existentes, gastos, ingresos y ausencia de saldos iniciales.
+
+---
+
 
 ## Correcciones v4.1
 
