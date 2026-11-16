@@ -210,7 +210,7 @@
   const v3Dashboard = dashboard;
   dashboard = () => configured() ? walletSummary() + stripOldTop(v3Dashboard()) : walletWelcome();
   const v3Transactions = transactions;
-  transactions = () => walletSummary() + transferHistory() + stripOldTop(v3Transactions());
+  transactions = () => transferHistory() + stripOldTop(v3Transactions());
   const v3Settings = settings;
   settings = () => '<section class="panel wallet-settings"><div class="panel-heading"><div>' +
     '<h3>Mi dinero: efectivo y cuenta</h3><p>Consulta o reconcilia tus saldos sin borrar movimientos.</p></div>' +
