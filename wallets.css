@@ -62,3 +62,25 @@
 
 /* Resaltado persistente de los datos ficticios en la versión de prueba. */
 .wallet-demo-warning{padding:12px 14px;margin:0 0 19px;border-radius:12px;border:1px solid #e5ab6b;background:#4b351c;color:#ffe3bd;font-weight:700;font-size:12px;line-height:1.6}
+
+/* Brújula v4.4: resumen general y control de dinero reservado para metas */
+.wallet-total-label{font-weight:750;color:#e3fff2;font-size:14px;margin:10px 0 2px!important}
+.wallet-total-breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.wallet-total-breakdown>div{display:flex;flex-direction:column;gap:9px;background:rgba(10,26,41,.72);border:1px solid #426979;border-radius:13px;padding:16px;min-width:0}
+.wallet-total-breakdown span{font-size:12px;font-weight:700;color:#cee6e0}
+.wallet-total-breakdown strong{font-size:clamp(19px,2.5vw,25px);color:#f0fff9;overflow-wrap:anywhere}
+.wallet-total-breakdown .wallet-unallocated{border-color:#3d9b78;background:rgba(17,74,55,.39)}
+.wallet-total-breakdown .wallet-unallocated strong{color:#acffd2}
+.goal-funds-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;padding:16px;margin:16px 0;border:1px solid var(--line);border-radius:17px;background:var(--panel)}
+.goal-funds-summary>div{display:flex;flex-direction:column;gap:8px;padding:13px;border-radius:12px;background:var(--panel2);min-width:0}
+.goal-funds-summary span{font-size:12px;color:var(--muted)}
+.goal-funds-summary strong{font-size:clamp(18px,2.5vw,24px);overflow-wrap:anywhere}
+.goal-funds-summary .goal-funds-free strong{color:var(--green)}
+.goal-funds-summary p{grid-column:1/-1;margin:2px 4px 0;color:var(--muted);line-height:1.6;font-size:12px}
+.goal-contribution-note{display:grid;gap:10px;border:1px solid #437e76;border-radius:13px;padding:16px;background:#183b3b}
+.goal-contribution-note span{display:flex;justify-content:space-between;gap:9px;color:#d3e8e4;font-size:12px}
+.goal-contribution-note strong{color:#b5ffdc;font-size:14px;overflow-wrap:anywhere}
+@media(max-width:650px){
+ .wallet-total-breakdown,.goal-funds-summary{grid-template-columns:1fr}
+ .goal-contribution-note span{flex-wrap:wrap}
+}
