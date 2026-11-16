@@ -1,4 +1,20 @@
-# Brújula — Finanzas personales v4.4
+# Brújula — Finanzas personales v4.6
+
+## Nueva experiencia en Presupuestos
+
+La sección de presupuestos ahora tiene **dos niveles**:
+
+1. **Carrusel de tarjetas** (primera vista): diez categorías con iconos ilustrativos de alimentación, vivienda, transporte, servicios, salud, educación, deudas, familia, entretenimiento y otros. Las tarjetas incluyen presupuesto asignado, gasto real, barra de progreso, dinero restante y un botón **Editar** grande y cuadrado. Desliza horizontalmente en móvil o usa los botones de flechas.
+2. **Panorama completo** (debajo): resumen mensual de presupuesto total, gasto real, diferencia y porcentaje utilizado. Muestra las diez categorías con información detallada y edición directa.
+
+Las categorías con presupuestos asignados aparecen primero en el carrusel. El control conserva los datos de meses anteriores y permite seguir copiando los límites del mes pasado.
+
+### Compatibilidad
+
+Se mantiene el mismo esquema de datos de presupuestos `db.budgets[mes][categoria]`; no hay migración ni pérdida de datos. Sigue disponible el resumen compacto de presupuestos en el panel principal. Este rediseño es una actualización de presentación y navegación.
+
+---
+
 
 ## Saldo total y metas de ahorro realistas
 
