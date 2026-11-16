@@ -124,7 +124,8 @@
       'Así sabrás exactamente de dónde sale cada gasto.</p>' +
       walletForm() +
       '<div class="wallet-welcome-actions"><button type="button" class="link-btn" data-wallet-action="start-zero">' +
-      'Empezar con $0 en ambas</button></div>' +
+      'Empezar con $0 en ambas</button>' +
+      '<button type="button" class="link-btn" data-action="demo">Explorar demostración sin dinero real</button></div>' +
       '<div class="wallet-onboarding-steps"><span>1 · Añade tus saldos</span>' +
       '<span>2 · Registra ingresos y gastos</span><span>3 · Consigna o retira sin duplicar ingresos</span></div>' +
       '</section>';
@@ -135,6 +136,7 @@
       '<h2>Separa tu dinero entre efectivo y cuenta</h2><p>Registra lo que tienes hoy para controlar cada saldo.</p></div>' +
       '<button type="button" class="btn primary" data-wallet-action="adjust">Configurar saldos</button></section>';
     return '<section class="wallet-summary" aria-label="Mis saldos actuales">' +
+      (db.demo ? '<p class="wallet-demo-warning">⚠ DATOS FICTICIOS · Estás viendo una demostración. Para comenzar con tus finanzas reales, entra en Configuración y borra los datos de ejemplo.</p>' : '') +
       '<div class="wallet-summary-header"><div><span class="balance-eyebrow">TU DINERO DISPONIBLE HOY</span>' +
       '<h2>' + pesos(v.total) + '</h2><p>Dinero total entre efectivo y cuentas</p></div>' +
       '<button type="button" class="btn ghost small" data-wallet-action="adjust">Ajustar saldos</button></div>' +
@@ -209,6 +211,11 @@
       '</select><small class="muted">Este movimiento actualizará el saldo que elijas.</small></div>';
     const amountField = form.querySelector('.tx-money');
     if (amountField) amountField.insertAdjacentHTML('afterend', field);
+    const method = document.getElementById('tx-method');
+    if (method) {
+      if (selected==='cash') method.value='Efectivo';
+      else if (method.value==='Efectivo') method.value='Transferencia';
+    }
   };
 
   function openWalletAdjust() {
@@ -286,6 +293,19 @@
     if (el) el.textContent = Number.isFinite(cash + bank) ? pesos(cash + bank) : '—';
   });
   document.addEventListener('change', event => {
+    if (event.target.id==='tx-account') {
+      const method=document.getElementById('tx-method');
+      if(method) {
+        if(event.target.value==='cash') method.value='Efectivo';
+        else if(method.value==='Efectivo') method.value='Transferencia';
+      }
+      return;
+    }
+    if(event.target.id==='tx-method') {
+      const account=document.getElementById('tx-account');
+      if(account) account.value=event.target.value==='Efectivo'?'cash':'bank';
+      return;
+    }
     if (event.target.id !== 'wallet-transfer-from') return;
     const from = event.target.value;
     const next = document.getElementById('wallet-transfer-to');
