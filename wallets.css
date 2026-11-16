@@ -59,3 +59,6 @@
   .wallet-form-total strong{font-size:17px}
 }
 @media(max-width:380px){.wallet-summary-actions{grid-template-columns:1fr}}
+
+/* Resaltado persistente de los datos ficticios en la versión de prueba. */
+.wallet-demo-warning{padding:12px 14px;margin:0 0 19px;border-radius:12px;border:1px solid #e5ab6b;background:#4b351c;color:#ffe3bd;font-weight:700;font-size:12px;line-height:1.6}
