@@ -85,12 +85,19 @@
     return result;
   }
 
-  const moneyInput = (field, label, value, hint) =>
-    '<div class="wallet-input-block"><label for="' + field + '">' + label + '</label>' +
-    '<div class="balance-money-input"><span>$</span><input id="' + field + '" name="' + field +
-    '" type="text" inputmode="numeric" autocomplete="off" required placeholder="Ej: 150.000" value="' +
-    safe(String(value)) + '"></div>' +
-    (hint ? '<small>' + hint + '</small>' : '') + '</div>';
+  // Un cero inicial se muestra como sugerencia, no como valor editable:
+  // al escribir 5 no debe convertirse en "05". En saldos, vacío significa $0.
+  const moneyInput = (field, label, value, hint) => {
+    const text = String(value ?? '').trim();
+    const walletField = field === 'wallet-cash' || field === 'wallet-bank';
+    const visibleValue = walletField && parseCOP(text) === 0 ? '' : text;
+    return '<div class="wallet-input-block"><label for="' + field + '">' + label + '</label>' +
+      '<div class="balance-money-input"><span>$</span><input id="' + field + '" name="' + field +
+      '" type="text" inputmode="numeric" autocomplete="off"' + (walletField ? '' : ' required') +
+      ' placeholder="' + (walletField ? '0' : 'Ej: 150.000') + '" value="' +
+      safe(visibleValue) + '"></div>' +
+      (hint ? '<small>' + hint + '</small>' : '') + '</div>';
+  };
 
   function walletForm(adjust = false) {
     const now = balances();
@@ -251,6 +258,8 @@
     if (!s || s.startsWith('-')) return NaN;
     return parseCOP(s);
   }
+  // Solo para los dos saldos: dejar el campo sin escribir equivale a $0.
+  const parseWalletAmount = raw => String(raw ?? '').trim() === '' ? 0 : parseNonnegative(raw);
   function saveWallet(cash, bank) {
     if (!isAmount(cash) || !isAmount(bank) || cash + bank > 1e15) {
       return toast('Escribe cantidades válidas en pesos colombianos.');
@@ -284,11 +293,18 @@
     }
   });
 
+  document.addEventListener('focusin', event => {
+    const input = event.target;
+    if (input?.id !== 'wallet-cash' && input?.id !== 'wallet-bank') return;
+    if (input.value.trim() === '0') input.value = '';
+    // Cuando hay un importe anterior, seleccionarlo facilita reemplazarlo.
+    else if (input.value.trim() && typeof input.select === 'function') input.select();
+  });
   document.addEventListener('input', event => {
     const form = event.target.closest('#wallet-form');
     if (!form) return;
-    const cash = parseNonnegative(form.elements['wallet-cash']?.value);
-    const bank = parseNonnegative(form.elements['wallet-bank']?.value);
+    const cash = parseWalletAmount(form.elements['wallet-cash']?.value);
+    const bank = parseWalletAmount(form.elements['wallet-bank']?.value);
     const el = document.getElementById('wallet-form-total');
     if (el) el.textContent = Number.isFinite(cash + bank) ? pesos(cash + bank) : '—';
   });
@@ -316,8 +332,8 @@
   document.addEventListener('submit', event => {
     if (event.target.id === 'wallet-form') {
       event.preventDefault();
-      const cash = parseNonnegative(event.target.elements['wallet-cash'].value);
-      const bank = parseNonnegative(event.target.elements['wallet-bank'].value);
+      const cash = parseWalletAmount(event.target.elements['wallet-cash'].value);
+      const bank = parseWalletAmount(event.target.elements['wallet-bank'].value);
       saveWallet(cash, bank);
     }
     if (event.target.id === 'wallet-transfer-form') {
