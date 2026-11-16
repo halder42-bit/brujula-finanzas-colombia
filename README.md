@@ -1,4 +1,16 @@
-# Brújula — Finanzas personales v4
+# Brújula — Finanzas personales v4.1
+
+## Correcciones v4.1
+
+- **Demostración segura:** los datos ficticios se cargan únicamente si la aplicación todavía no tiene saldos, ingresos, gastos, transferencias, presupuestos, metas ni evaluaciones fiscales. Una demo no puede reemplazar saldos reales. La vista de demostración identifica sus números como ficticios.
+- **Registro coherente:** al seleccionar cuenta, el método de pago se sincroniza. Los movimientos nuevos nunca guardan las combinaciones contradictorias «Efectivo · Cuenta» o «Débito · Efectivo». El listado también presenta una etiqueta coherente para movimientos antiguos.
+- **Caché:** `index.html` utiliza versiones de recursos para que GitHub Pages entregue el código actualizado.
+- **Datos:** se mantiene el mismo almacenamiento local y no se borran datos de usuarios existentes.
+
+**Pruebas:** 26 comprobaciones automatizadas del código, incluidos saldos, consignaciones, gastos, demo y migración de registros anteriores. No sustituyen una auditoría financiera ni una prueba completa del navegador.
+
+---
+
 
 ## Nuevo: efectivo, cuenta y traslados de dinero propio
 
