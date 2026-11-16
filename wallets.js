@@ -85,6 +85,19 @@
     return result;
   }
 
+  // Lo reservado en metas forma parte del dinero físico, no crea ingresos nuevos.
+  window.brujulaWalletSummary = () => {
+    const funds = balances();
+    if (!funds) return null;
+    const ids = new Set(db.goals.map(g => g.id));
+    const reserved = db.goalEntries.reduce((total, e) => {
+      const amount = Number(e.amount);
+      return ids.has(e.goalId) && Number.isSafeInteger(amount) && amount > 0 ? total + amount : total;
+    }, 0);
+    return { ...funds, reserved, unallocated: Math.max(0, funds.total - reserved),
+      shortfall: Math.max(0, reserved - funds.total) };
+  };
+
   // Un cero inicial se muestra como sugerencia, no como valor editable:
   // al escribir 5 no debe convertirse en "05". En saldos, vacío significa $0.
   const moneyInput = (field, label, value, hint) => {
@@ -138,24 +151,28 @@
       '</section>';
   }
   function walletSummary() {
-    const v = balances();
+    const v = window.brujulaWalletSummary();
     if (!v) return '<section class="balance-prompt"><div><span class="balance-eyebrow">CONFIGURACIÓN INICIAL</span>' +
       '<h2>Separa tu dinero entre efectivo y cuenta</h2><p>Registra lo que tienes hoy para controlar cada saldo.</p></div>' +
       '<button type="button" class="btn primary" data-wallet-action="adjust">Configurar saldos</button></section>';
     return '<section class="wallet-summary" aria-label="Mis saldos actuales">' +
       (db.demo ? '<p class="wallet-demo-warning">⚠ DATOS FICTICIOS · Estás viendo una demostración. Para comenzar con tus finanzas reales, entra en Configuración y borra los datos de ejemplo.</p>' : '') +
-      '<div class="wallet-summary-header"><div><span class="balance-eyebrow">TU DINERO DISPONIBLE HOY</span>' +
-      '<h2>' + pesos(v.total) + '</h2><p>Dinero total entre efectivo y cuentas</p></div>' +
+      '<div class="wallet-summary-header"><div><span class="balance-eyebrow">RESUMEN GENERAL DE TU DINERO</span>' +
+      '<p class="wallet-total-label">Dinero total entre efectivo y cuenta</p><h2>' + pesos(v.total) + '</h2><p>Incluye lo reservado para metas, sin contarlo dos veces.</p></div>' +
       '<button type="button" class="btn ghost small" data-wallet-action="adjust">Ajustar saldos</button></div>' +
       '<div class="wallet-accounts">' +
       '<div class="wallet-account"><span>💵 Efectivo</span><strong>' + pesos(v.cash) + '</strong>' +
       '<small>Dinero que tienes físicamente</small></div>' +
       '<div class="wallet-account"><span>🏦 Cuenta y billeteras</span><strong>' + pesos(v.bank) + '</strong>' +
       '<small>Dinero en bancos y apps</small></div></div>' +
+      '<div class="wallet-total-breakdown">' +
+      '<div><span>🎯 Reservado para metas</span><strong>' + pesos(v.reserved) + '</strong></div>' +
+      '<div class="wallet-unallocated"><span>💚 Libre para gastar o ahorrar</span><strong>' + pesos(v.unallocated) + '</strong></div></div>' +
+      (v.shortfall>0?'<p class="balance-warning">Tus aportes anteriores superan tu dinero total por '+pesos(v.shortfall)+'. Revisa los saldos y las metas.</p>':'') +
       '<div class="wallet-summary-actions">' +
       '<button type="button" class="btn primary" data-wallet-action="transfer" data-from="cash">↑ Consignar efectivo</button>' +
       '<button type="button" class="btn ghost" data-wallet-action="transfer" data-from="bank">↓ Retirar de cuenta</button></div>' +
-      '<p class="wallet-explain">Las transferencias entre tu propio dinero no se registran como ingresos o gastos.</p>' +
+      '<p class="wallet-explain">Los ahorros reservados siguen formando parte de tu efectivo y cuenta. Las transferencias internas no son ingresos ni gastos.</p>' +
       ((v.cash < 0 || v.bank < 0) ? '<p class="balance-warning">Hay un saldo negativo. Revisa los movimientos y sus cuentas o ajusta tus saldos.</p>' : '') +
       '</section>';
   }
