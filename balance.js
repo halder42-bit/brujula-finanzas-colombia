@@ -18,7 +18,7 @@
     return normalized;
   };
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+    const raw = window.BRUJULA_CLOUD_ENABLED ? null : JSON.parse(localStorage.getItem(KEY) || 'null');
     db.balance = readBalance(raw?.balance);
   } catch { db.balance = defaultBalance(); }
 
