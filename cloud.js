@@ -283,13 +283,17 @@
   }
   async function signIn(email) {
     showLoading('Enviando un enlace de acceso a tu correo…');
-    const {error}=await client.auth.signInWithOtp({
-      email,
-      options:{emailRedirectTo:cloudPath,shouldCreateUser:true}
-    });
-    showLogin(error ?
-      'No se pudo enviar el enlace: ' + error.message :
-      'Revisa tu correo, abre el enlace y regresarás a Brújula con tu cuenta.');
+    try {
+      const {error}=await client.auth.signInWithOtp({
+        email,
+        options:{emailRedirectTo:cloudPath,shouldCreateUser:true}
+      });
+      showLogin(error ?
+        'No se pudo enviar el enlace: ' + error.message :
+        'Revisa tu correo, abre el enlace y regresarás a Brújula con tu cuenta.');
+    } catch(error) {
+      showLogin('No se pudo conectar para enviar el enlace: ' + (error?.message || 'Revisa tu conexión.'));
+    }
   }
 
   gate.addEventListener('submit',event => {
@@ -358,7 +362,7 @@
             if (ready) {ready=false;db=normalize(null);render();}
             showLogin();
           },0);
-        } else if (event==='SIGNED_IN' && session?.user && !loadingFor) {
+        } else if (event==='SIGNED_IN' && session?.user && !loadingFor && pending===null) {
           setTimeout(()=>{if (!ready || userId!==session.user.id) void loadUser();},0);
         }
       });
